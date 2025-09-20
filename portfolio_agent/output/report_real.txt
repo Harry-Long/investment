@@ -1,0 +1,20 @@
+Portfolio Analysis Summary (Educational Only)
+-------------------------------------------
+Tickers: ['QQQ.US', 'NVDA.US', 'VXUS.US', 'VTI.US', 'MSFT.US', 'AMZN.US', 'AAPL.US', 'BND.US']
+Weights: {'QQQ.US': np.float64(0.125), 'NVDA.US': np.float64(0.125), 'VXUS.US': np.float64(0.125), 'VTI.US': np.float64(0.125), 'MSFT.US': np.float64(0.125), 'AMZN.US': np.float64(0.125), 'AAPL.US': np.float64(0.125), 'BND.US': np.float64(0.125)}
+
+Performance and Risk
+Annualized Return: 0.3280
+Annualized Volatility: 0.2804
+Sharpe: 1.1698
+Max Drawdown: -0.3301  Window: 2021-11-19 00:00:00 to 2022-10-14 00:00:00
+
+95% VaR: -0.0223   95% ES: -0.0331
+99% VaR: -0.0386   99% ES: -0.0510
+
+Relative to benchmark
+Annualized Excess Return: 0.0748
+Tracking Error (ann.): 0.0885
+Information Ratio: 0.8457
+
+Disclaimer: For education only. Not investment advice.

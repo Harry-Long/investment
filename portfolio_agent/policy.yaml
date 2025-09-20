@@ -1,0 +1,50 @@
+version: 1
+data:
+  source: stooq
+  universe_file: ./universe.txt     # or provide inline 'universe' below
+  universe: []                      # fallback if file not provided
+  start: 2018-01-01
+  end: null
+  benchmark: SPY.US
+
+portfolio:
+  mode: buffet
+
+  # asset count constraints
+  min_count: 5
+  max_count: 15
+  target_count: 10
+
+  # selection method before optimization
+  selection:
+    method: top_by_sharpe          # options: top_by_1y_return, top_by_sharpe, none
+    lookback_days: 252
+
+  # optimization objective and parameters
+  optimization:
+    objective: max_sharpe          # options: max_sharpe, min_volatility, efficient_risk, efficient_return, max_quadratic_utility
+    risk_free_rate: 0.0
+    l2_gamma: 0.001
+    weight_bounds: [0.0, 0.35]
+    target_volatility: 0.12        # used only if objective=efficient_risk
+    target_return: 0.10            # used only if objective=efficient_return
+    risk_aversion: 1.0             # used only if objective=max_quadratic_utility
+
+  # concentration rules (applied only if mode=buffet)
+  concentration:
+    enforce: true
+    top_k: 5
+    top_k_min_share: 0.50
+
+execution:
+  rebalance: none
+  fee_rate: 0.0000
+
+reporting:
+  export_extras: true
+  title: "Static Portfolio Allocation Report"
+
+notes:
+  - "CLI --tickers overrides data.universe or data.universe_file."
+  - "CLI --mode overrides portfolio.mode."
+  - "All analysis is for educational purposes only."
