@@ -1,40 +1,40 @@
 ,Benchmark,Strategy
 Start Period,2018-01-02,2018-01-02
-End Period,2025-09-19,2025-09-19
+End Period,2025-09-22,2025-09-22
 Risk-Free Rate,0,0
 Time in Market,1.0,1.0
-Cumulative Return,1.77,3.75
-CAGR﹪,0.14,0.22
-Sharpe,0.77,1.01
+Cumulative Return,1.79,7.47
+CAGR﹪,0.14,0.32
+Sharpe,0.78,1.1
 Prob. Sharpe Ratio,0.98,1.0
-Sortino,1.09,1.45
-Sortino/√2,0.77,1.03
-Omega,1.2,1.2
-Max Drawdown,-0.34,-0.33
-Max DD Date,2020-03-23,2022-10-14
+Sortino,1.09,1.59
+Sortino/√2,0.77,1.13
+Omega,1.22,1.22
+Max Drawdown,-0.34,-0.44
+Max DD Date,2020-03-23,2022-12-28
 Max DD Period Start,2020-02-20,2021-11-22
-Max DD Period End,2020-08-07,2023-06-14
-Longest DD Days,708,570
-Gain/Pain Ratio,0.16,0.2
-Gain/Pain (1M),0.9,1.35
-Payoff Ratio,0.9,0.91
-Profit Factor,1.16,1.2
-Common Sense Ratio,1.04,1.15
-CPC Index,0.58,0.61
-Tail Ratio,0.9,0.96
-Outlier Win Ratio,4.25,3.42
-Outlier Loss Ratio,4.3,3.54
-MTD,0.03,0.03
-3M,0.11,0.12
-6M,0.19,0.23
-YTD,0.14,0.16
-1Y,0.19,0.23
-3Y (ann.),0.24,0.36
-5Y (ann.),0.16,0.19
-10Y (ann.),0.14,0.22
-All-time (ann.),0.14,0.22
+Max DD Period End,2020-08-07,2023-07-12
+Longest DD Days,708,598
+Gain/Pain Ratio,0.16,0.22
+Gain/Pain (1M),0.91,1.44
+Payoff Ratio,0.88,0.9
+Profit Factor,1.16,1.22
+Common Sense Ratio,1.04,1.18
+CPC Index,0.57,0.62
+Tail Ratio,0.9,0.97
+Outlier Win Ratio,4.78,2.95
+Outlier Loss Ratio,4.94,3.12
+MTD,0.03,0.06
+3M,0.12,0.19
+6M,0.18,0.34
+YTD,0.14,0.22
+1Y,0.18,0.32
+3Y (ann.),0.24,0.46
+5Y (ann.),0.16,0.25
+10Y (ann.),0.14,0.32
+All-time (ann.),0.14,0.32
 Avg. Drawdown,-0.02,-0.03
-Avg. Drawdown Days,18,21
-Recovery Factor,3.47,5.32
-Ulcer Index,0.08,0.1
-Serenity Index,0.78,1.04
+Avg. Drawdown Days,18,20
+Recovery Factor,3.48,5.54
+Ulcer Index,0.08,0.14
+Serenity Index,0.66,1.19

@@ -1,20 +1,20 @@
 Portfolio Analysis Summary (Educational Only)
 -------------------------------------------
-Tickers: ['QQQ.US', 'NVDA.US', 'VXUS.US', 'VTI.US', 'MSFT.US', 'AMZN.US', 'AAPL.US', 'BND.US']
-Weights: {'QQQ.US': np.float64(0.125), 'NVDA.US': np.float64(0.125), 'VXUS.US': np.float64(0.125), 'VTI.US': np.float64(0.125), 'MSFT.US': np.float64(0.125), 'AMZN.US': np.float64(0.125), 'AAPL.US': np.float64(0.125), 'BND.US': np.float64(0.125)}
+Tickers: ['TSLA.US', 'NVDA.US', 'QQQ.US', 'META.US', 'VXUS.US', 'VTI.US', 'MSFT.US', 'AMZN.US', 'AAPL.US', 'AMD.US']
+Weights: {'TSLA.US': np.float64(0.1), 'NVDA.US': np.float64(0.1), 'QQQ.US': np.float64(0.1), 'META.US': np.float64(0.1), 'VXUS.US': np.float64(0.1), 'VTI.US': np.float64(0.1), 'MSFT.US': np.float64(0.1), 'AMZN.US': np.float64(0.1), 'AAPL.US': np.float64(0.1), 'AMD.US': np.float64(0.1)}
 
 Performance and Risk
-Annualized Return: 0.3280
-Annualized Volatility: 0.2804
-Sharpe: 1.1698
-Max Drawdown: -0.3301  Window: 2021-11-19 00:00:00 to 2022-10-14 00:00:00
+Annualized Return: 0.4106
+Annualized Volatility: 0.3434
+Sharpe: 1.1955
+Max Drawdown: -0.4445  Window: 2021-11-19 00:00:00 to 2022-12-28 00:00:00
 
-95% VaR: -0.0223   95% ES: -0.0331
-99% VaR: -0.0386   99% ES: -0.0510
+95% VaR: -0.0288   95% ES: -0.0421
+99% VaR: -0.0495   99% ES: -0.0639
 
 Relative to benchmark
-Annualized Excess Return: 0.0748
-Tracking Error (ann.): 0.0885
-Information Ratio: 0.8457
+Annualized Excess Return: 0.1691
+Tracking Error (ann.): 0.1468
+Information Ratio: 1.1524
 
 Disclaimer: For education only. Not investment advice.
