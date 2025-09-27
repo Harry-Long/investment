@@ -1,5 +1,5 @@
 # Example universe file (you can edit freely)
-AAPL.US META.US AMD.US TSLA.US
+AAPL.US
 MSFT.US NVDA.US, AMZN.US
 QQQ.US
 VTI.US VXUS.US BND.US

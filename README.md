@@ -32,7 +32,9 @@ python run.py --source synthetic --export-extras
 - `mod/policy.py` — policy parsing and mode/dates/benchmark resolution
 - `mod/universe.py` — universe resolution (CLI > file > YAML)
 - `mod/selector.py` — pre-optimization selection (top by return / Sharpe)
-- `mod/optimizer.py` — PyPortfolioOpt objective dispatch
+- `mod/optimizer.py` — PyPortfolioOpt objective dispatch + multi-objective engine
+- `mod/perf_metrics.py` — shared performance/risk helpers
+- `mod/backtest.py` — in-sample & walk-forward backtesting wrapper
 - `mod/concentration.py` — buffet top-k concentration rule
 - `policy.yaml` — full policy template
 - `universe.txt` — sample universe list
@@ -40,5 +42,4 @@ python run.py --source synthetic --export-extras
 ## Notes
 - US tickers on Stooq usually need `.US` suffix (e.g., `AAPL.US`).
 - QuantStats HTML and extra CSVs will be written to `./output` by default.
-- This is a static allocation analysis tool. No dynamic rebalancing is performed.
-
+- Optional backtesting (in-sample or walk-forward) can be enabled in `policy.yaml` under `portfolio.backtest`.

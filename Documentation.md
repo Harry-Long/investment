@@ -9,8 +9,18 @@ Agentic AI agent for investment assistance
 
 - **Portfolio Construction & Optimization (`optimizer.py`)**  
   - 等权重组合。  
-  - 基于 **PyPortfolioOpt** 的均值方差优化（最大化 Sharpe）。  
-  - 可以生成优化后的权重。  
+  - 基于 **PyPortfolioOpt** 的均值方差优化（最大化 Sharpe 等目标）。  
+  - 新增多目标优化引擎（`engine=multi_objective`），可同时最大化 Sharpe / 收益并最小化波动与回撤。  
+  - 输出统一权重与核心绩效指标，方便与报告模块衔接。  
+
+- **Performance Metrics (`perf_metrics.py`)**  
+  - 抽取常用绩效指标（年化收益、波动、Sharpe、Sortino、最大回撤等）。  
+  - 供优化与回测模块共享，避免重复实现。  
+
+- **Backtesting (`backtest.py`)**  
+  - 支持 in-sample 与 walk-forward 模式，复用策略优化逻辑生成滚动权重。  
+  - 可配置再平衡频率、训练/测试窗口、交易成本。  
+  - 结果保存为 JSON，便于后续分析或报告。  
 
 - **Policy / Universe (`policy.py`, `policy.yaml`, `universe.txt`)**  
   - YAML 文件定义投资策略：股票池、约束条件、集中度规则。  

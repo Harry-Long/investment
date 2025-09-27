@@ -22,6 +22,7 @@ portfolio:
 
   # optimization objective and parameters
   optimization:
+    engine: multi_objective        # options: pyportfolioopt, multi_objective
     objective: max_sharpe          # options: max_sharpe, min_volatility, efficient_risk, efficient_return, max_quadratic_utility
     risk_free_rate: 0.0
     l2_gamma: 0.001
@@ -29,12 +30,34 @@ portfolio:
     target_volatility: 0.12        # used only if objective=efficient_risk
     target_return: 0.10            # used only if objective=efficient_return
     risk_aversion: 1.0             # used only if objective=max_quadratic_utility
+    multi_objective:               # used only if engine=multi_objective
+      objectives:
+        maximize_sharpe: 0.6
+        minimize_volatility: 0.2
+        minimize_max_drawdown: 0.2
+      targets:
+        target_volatility: 0.18
+        target_max_drawdown: 0.30
+      long_only: true
+      min_weight: 0.0
+      max_weight: 0.7
+      leverage: 1.0
 
   # concentration rules (applied only if mode=buffet)
   concentration:
-    enforce: true
+    enforce: false  # true or false
     top_k: 5
     top_k_min_share: 0.50
+
+  # optional backtesting block for optimisation output
+  backtest:
+    enabled: true            # true or false
+    method: in_sample             # options: in_sample, walk_forward
+    rebalance_freq: M             # M=monthly, Q=quarterly, A=annual
+    train_years: 5
+    test_years: 1
+    transaction_cost_bps: 5
+    risk_free_rate: 0.0
 
 execution:
   rebalance: none

@@ -9,7 +9,7 @@ Main orchestrator for static portfolio analysis.
 - Optional buffet concentration enforcement (top-k min share)
 - Exports QuantStats HTML and extras
 """
-import os, argparse, pandas as pd, numpy as np
+import os, json, argparse, pandas as pd, numpy as np
 from mod.data_provider import get_prices_synthetic, get_prices_stooq
 from mod.qs_wrapper import basic_metrics, save_html_report
 from mod.risk_tools import to_simple_returns, portfolio_returns, portfolio_nav, annualized_cov, risk_contribution, corr_matrix, var_es_hist
@@ -18,6 +18,7 @@ from mod.policy import load_policy, resolve_mode, resolve_dates_and_benchmark
 from mod.universe import resolve_universe
 from mod.selector import select_assets
 from mod.optimizer import optimize_portfolio
+from mod.backtest import Backtester
 from mod.concentration import enforce_topk_share
 
 def parse_args():
@@ -84,7 +85,7 @@ def main():
     tickers_in_use = chosen_list
 
     # Returns
-    ret = to_simple_returns(prices)
+    ret = to_simple_returns(prices).dropna()
     if ret.empty or ret.shape[0] < 30:
         raise RuntimeError(f"Insufficient data rows: {ret.shape[0]}")
 
@@ -104,18 +105,22 @@ def main():
 
     # Optimization
     opt = optimize_portfolio(prices, policy)
+    engine = opt.get("engine", "pyportfolioopt")
     w_opt = pd.Series(opt["weights"]).reindex(prices.columns).fillna(0.0)
 
     # Buffet concentration
     if mode_in_use == "buffet":
         port_cfg = policy.get("portfolio", {}) if isinstance(policy.get("portfolio"), dict) else policy
         conc = (port_cfg.get("concentration") or {}) if isinstance(port_cfg, dict) else {}
-        top_k = int(conc.get("top_k", 5))
-        top_k_min_share = float(conc.get("top_k_min_share", conc.get("top5_min_share", 0.50)))
-        wb = (port_cfg.get("optimization", {}) or {}).get("weight_bounds", port_cfg.get("weight_bounds", [0.0, 0.35]))
-        upper_cap = float(wb[1]) if isinstance(wb, (list, tuple)) and len(wb) == 2 else 0.35
-        from mod.concentration import enforce_topk_share
-        w_opt = enforce_topk_share(w_opt, topk=top_k, min_share=top_k_min_share, upper=upper_cap)
+        enforce_flag = conc.get("enforce")
+        enforce_flag = True if enforce_flag is None else bool(enforce_flag)
+        if enforce_flag:
+            top_k = int(conc.get("top_k", 5))
+            top_k_min_share = float(conc.get("top_k_min_share", conc.get("top5_min_share", 0.50)))
+            wb = (port_cfg.get("optimization", {}) or {}).get("weight_bounds", port_cfg.get("weight_bounds", [0.0, 0.35]))
+            upper_cap = float(wb[1]) if isinstance(wb, (list, tuple)) and len(wb) == 2 else 0.35
+            from mod.concentration import enforce_topk_share
+            w_opt = enforce_topk_share(w_opt, topk=top_k, min_share=top_k_min_share, upper=upper_cap)
 
     # Save weights & returns
     w0.to_frame("weight").to_csv(os.path.join(args.outdir, f"weights_initial{suffix}.csv"))
@@ -150,12 +155,30 @@ def main():
 
     print("Initial weights")
     print(w0.round(4).to_string())
-    print("\nOptimized weights (PyPortfolioOpt)")
+    print("\nOptimized weights")
     print(w_opt.round(4).to_string())
-    print("\nOptimized performance (estimate)")
+    print(f"\nOptimization engine: {engine}")
+    print("Optimized performance (estimate)")
     print({k: (round(v, 4) if isinstance(v, float) else v) for k, v in opt.items() if k != "weights"})
     # print(f"QuantStats HTML report: {html_path}")
     # print(f"QuantStats metrics CSV: {metrics_csv}")
+
+    # Backtesting
+    port_section = policy.get("portfolio") if isinstance(policy.get("portfolio"), dict) else {}
+    backtest_cfg = port_section.get("backtest") if isinstance(port_section, dict) else {}
+    backtest_result = None
+    if isinstance(backtest_cfg, dict) and backtest_cfg.get("enabled", False):
+        try:
+            bt = Backtester(prices, policy, returns=ret)
+            backtest_result = bt.run()
+        except Exception as exc:
+            print(f"[warn] Backtest failed: {exc}")
+
+    if backtest_result:
+        bt_path = os.path.join(args.outdir, f"backtest_{backtest_result['mode']}{suffix}.json")
+        with open(bt_path, "w", encoding="utf-8") as f:
+            json.dump(backtest_result, f, indent=2)
+        print(f"Backtest ({backtest_result['mode']}) saved to {bt_path}")
 
     # Extras
     if args.export_extras:

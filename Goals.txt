@@ -1,0 +1,141 @@
+1. Return-Oriented Goals
+
+Annualized Return (CAGR)
+
+Goal: Wealth accumulation
+
+Typical target: 4–12% depending on risk tolerance
+
+Conservative portfolios: 4–6%
+
+Balanced portfolios: 6–8%
+
+Aggressive portfolios: 8–12%
+
+Income Yield (Dividend/Interest %)
+
+Goal: Income generation / retirement cash flow
+
+Typical target: 2–6%
+
+Bonds/CDs: 2–4%
+
+Equity income: 3–6%
+
+Risk-adjusted Return (Sharpe Ratio)
+
+Goal: Maximize return per unit of risk
+
+Realistic target: 0.5 – 2.0
+
+0.5 = acceptable, 1.0 = good, 2.0+ = excellent
+
+Alpha (vs. benchmark)
+
+Goal: Outperform market after risk adjustment
+
+Target: 0–3% annualized over long term
+
+2. Risk-Control Goals
+
+Maximum Drawdown (MDD)
+
+Goal: Limit worst-case peak-to-trough loss
+
+Target ranges:
+
+Conservative: <15%
+
+Balanced: <25%
+
+Aggressive: <40%
+
+Volatility (Standard Deviation of Returns)
+
+Goal: Control portfolio fluctuations
+
+Realistic target (annualized):
+
+Conservative: 5–10%
+
+Balanced: 10–15%
+
+Aggressive: 15–25%
+
+Value at Risk (VaR, 95% / 99%)
+
+Goal: Limit potential short-term losses
+
+Example: "No more than -5% in a month with 95% confidence"
+
+Beta (Market Sensitivity)
+
+Goal: Control correlation with the market
+
+Conservative: 0.3–0.7
+
+Market-neutral: ~0
+
+Aggressive: 1.0–1.5+
+
+3. Diversification & Stability Goals
+
+Correlation to Benchmark (S&P 500, etc.)
+
+Goal: Reduce dependence on single market factor
+
+Target: <0.8 if diversification desired
+
+Asset Class Diversification
+
+Goal: Balance between equities, bonds, alternatives
+
+Example target allocations:
+
+Conservative: 60% bonds, 30% equities, 10% alternatives
+
+Aggressive: 80% equities, 15% bonds, 5% alternatives
+
+Downside Capture Ratio
+
+Goal: Lose less than market in downturns
+
+Target: <70% of benchmark losses
+
+4. Time Horizon Goals
+
+Capital Preservation (short-term, <3 years)
+
+Focus: low drawdown, high liquidity
+
+Metrics: MDD < 10%, Volatility < 5%
+
+Balanced Growth (3–10 years)
+
+Focus: moderate growth, controlled risk
+
+Metrics: CAGR 6–8%, Sharpe > 1, MDD < 25%
+
+Aggressive Growth (10+ years)
+
+Focus: long-term wealth, higher volatility acceptable
+
+Metrics: CAGR 8–12%, Sharpe > 0.7, MDD < 40%
+
+5. Goal-Based Outcomes
+
+Retirement Funding
+
+Safe Withdrawal Rate target: ~4% of portfolio per year
+
+Education Funding
+
+Target: Grow principal by X% in 5–15 years
+
+Wealth Preservation
+
+Goal: Beat inflation (CAGR > CPI + 1–2%)
+
+Legacy/Estate Growth
+
+Goal: Long-term compounding, tolerate volatility

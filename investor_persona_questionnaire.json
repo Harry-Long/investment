@@ -1,0 +1,273 @@
+{
+  "title": "Investor Persona Questionnaire",
+  "description": "This questionnaire helps us understand your financial profile, investment goals, and risk preferences to better tailor portfolio planning.",
+  "questions": [
+    {
+      "section": "1. Demographics",
+      "title": "Age",
+      "type": "multiple_choice",
+      "options": [
+        "Under 25",
+        "25\u201334",
+        "35\u201344",
+        "45\u201354",
+        "55\u201364",
+        "65+"
+      ]
+    },
+    {
+      "section": "1. Demographics",
+      "title": "Education",
+      "type": "multiple_choice",
+      "options": [
+        "High school or less",
+        "Some college",
+        "College degree (non-STEM)",
+        "College degree (STEM)",
+        "Finance/Economics/Business major",
+        "Graduate degree"
+      ]
+    },
+    {
+      "section": "1. Demographics",
+      "title": "Employment sector",
+      "type": "multiple_choice",
+      "options": [
+        "STEM",
+        "Finance/Business",
+        "Healthcare",
+        "Government/Public",
+        "Skilled trade/Blue collar",
+        "Other"
+      ]
+    },
+    {
+      "section": "1. Demographics",
+      "title": "Marital status",
+      "type": "multiple_choice",
+      "options": [
+        "Single",
+        "Married/Partnered",
+        "Divorced/Separated",
+        "Widowed"
+      ]
+    },
+    {
+      "section": "1. Demographics",
+      "title": "Dependents",
+      "type": "multiple_choice",
+      "options": [
+        "None",
+        "1\u20132",
+        "3+"
+      ]
+    },
+    {
+      "section": "2. Financial Profile",
+      "title": "Income level (annual household)",
+      "type": "multiple_choice",
+      "options": [
+        "< $50k",
+        "$50\u2013100k",
+        "$100\u2013250k",
+        "$250k+"
+      ]
+    },
+    {
+      "section": "2. Financial Profile",
+      "title": "Cash flow situation",
+      "type": "multiple_choice",
+      "options": [
+        "Positive surplus",
+        "Break-even",
+        "Negative (high expenses/debt)"
+      ]
+    },
+    {
+      "section": "2. Financial Profile",
+      "title": "Tax bracket",
+      "type": "multiple_choice",
+      "options": [
+        "10\u201312%",
+        "22\u201324%",
+        "32\u201335%",
+        "37%+"
+      ]
+    },
+    {
+      "section": "2. Financial Profile",
+      "title": "Net worth (excluding primary residence)",
+      "type": "multiple_choice",
+      "options": [
+        "< $100k",
+        "$100\u2013500k",
+        "$500k\u20131M",
+        "$1M\u20135M",
+        "$5M+"
+      ]
+    },
+    {
+      "section": "2. Financial Profile",
+      "title": "Total investable assets",
+      "type": "multiple_choice",
+      "options": [
+        "< $25k",
+        "$25\u2013100k",
+        "$100\u2013500k",
+        "$500k\u20131M",
+        "$1M+"
+      ]
+    },
+    {
+      "section": "2. Financial Profile",
+      "title": "Liquidity needs",
+      "type": "multiple_choice",
+      "options": [
+        "High (cash access within months)",
+        "Moderate (2\u20135 years)",
+        "Low (10+ years)"
+      ]
+    },
+    {
+      "section": "3. Investment Goals & Horizon",
+      "title": "Primary investment goal",
+      "type": "multiple_choice",
+      "options": [
+        "Wealth growth",
+        "Retirement",
+        "Education funding",
+        "Income generation",
+        "Wealth preservation",
+        "Legacy/Estate planning"
+      ]
+    },
+    {
+      "section": "3. Investment Goals & Horizon",
+      "title": "Time horizon",
+      "type": "multiple_choice",
+      "options": [
+        "Short term (<3 years)",
+        "Medium term (3\u201310 years)",
+        "Long term (10+ years)"
+      ]
+    },
+    {
+      "section": "3. Investment Goals & Horizon",
+      "title": "Risk tolerance",
+      "type": "multiple_choice",
+      "options": [
+        "Very conservative",
+        "Conservative",
+        "Moderate",
+        "Aggressive",
+        "Very aggressive"
+      ]
+    },
+    {
+      "section": "3. Investment Goals & Horizon",
+      "title": "Return expectation",
+      "type": "multiple_choice",
+      "options": [
+        "2\u20133%",
+        "4\u20136%",
+        "6\u20138%",
+        "8\u201312%",
+        "12%+"
+      ]
+    },
+    {
+      "section": "4. Behavioral & Psychological Factors",
+      "title": "Investment knowledge",
+      "type": "multiple_choice",
+      "options": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Expert"
+      ]
+    },
+    {
+      "section": "4. Behavioral & Psychological Factors",
+      "title": "Decision-making style",
+      "type": "multiple_choice",
+      "options": [
+        "DIY (self-directed)",
+        "Advisor-assisted",
+        "Fully delegated"
+      ]
+    },
+    {
+      "section": "4. Behavioral & Psychological Factors",
+      "title": "Comfort with volatility",
+      "type": "multiple_choice",
+      "options": [
+        "Cannot tolerate losses",
+        "OK with short-term losses",
+        "Seeks high volatility"
+      ]
+    },
+    {
+      "section": "4. Behavioral & Psychological Factors",
+      "title": "Past investment experience",
+      "type": "multiple_choice",
+      "options": [
+        "None",
+        "Stocks/ETFs/Mutual funds",
+        "Options/Derivatives",
+        "Real estate",
+        "Private equity/VC/Alternative assets"
+      ]
+    },
+    {
+      "section": "5. Other Contextual Factors",
+      "title": "Job sector correlation",
+      "type": "multiple_choice",
+      "options": [
+        "Same as investments",
+        "Diversified"
+      ]
+    },
+    {
+      "section": "5. Other Contextual Factors",
+      "title": "Geographic residence",
+      "type": "multiple_choice",
+      "options": [
+        "U.S.",
+        "EU",
+        "Asia-Pacific",
+        "Emerging market country"
+      ]
+    },
+    {
+      "section": "5. Other Contextual Factors",
+      "title": "Values/ESG preferences",
+      "type": "multiple_choice",
+      "options": [
+        "No preference",
+        "ESG focused",
+        "Faith-based/Ethical",
+        "Exclude specific industries"
+      ]
+    },
+    {
+      "section": "5. Other Contextual Factors",
+      "title": "Estate planning/legacy",
+      "type": "multiple_choice",
+      "options": [
+        "Not important",
+        "Somewhat important",
+        "Very important"
+      ]
+    },
+    {
+      "section": "5. Other Contextual Factors",
+      "title": "Insurance/contingency planning",
+      "type": "multiple_choice",
+      "options": [
+        "No coverage",
+        "Basic coverage",
+        "Comprehensive coverage"
+      ]
+    }
+  ]
+}
