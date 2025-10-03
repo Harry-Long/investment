@@ -1,20 +1,20 @@
 Portfolio Analysis Summary (Educational Only)
 -------------------------------------------
-Tickers: ['NVDA.US', 'QQQ.US', 'VXUS.US', 'VTI.US', 'MSFT.US', 'AMZN.US', 'AAPL.US', 'BND.US']
-Weights: {'NVDA.US': np.float64(0.125), 'QQQ.US': np.float64(0.125), 'VXUS.US': np.float64(0.125), 'VTI.US': np.float64(0.125), 'MSFT.US': np.float64(0.125), 'AMZN.US': np.float64(0.125), 'AAPL.US': np.float64(0.125), 'BND.US': np.float64(0.125)}
+Tickers: ['NVDA.US', 'QQQ.US', 'VXUS.US', 'MSFT.US', 'VTI.US', 'AMZN.US', 'AAPL.US', 'BND.US']
+Weights: {'NVDA.US': np.float64(0.125), 'QQQ.US': np.float64(0.125), 'VXUS.US': np.float64(0.125), 'MSFT.US': np.float64(0.125), 'VTI.US': np.float64(0.125), 'AMZN.US': np.float64(0.125), 'AAPL.US': np.float64(0.125), 'BND.US': np.float64(0.125)}
 
 Performance and Risk
-Annualized Return: 0.2028
-Annualized Volatility: 0.1708
-Sharpe: 1.1669
+Annualized Return: 0.2069
+Annualized Volatility: 0.1725
+Sharpe: 1.1763
 Max Drawdown: -0.3301  Window: 2021-11-19 00:00:00 to 2022-10-14 00:00:00
 
 95% VaR: -0.0223   95% ES: -0.0330
 99% VaR: -0.0386   99% ES: -0.0510
 
 Relative to benchmark
-Annualized Excess Return: 0.0745
-Tracking Error (ann.): 0.0884
-Information Ratio: 0.8422
+Annualized Excess Return: 0.0748
+Tracking Error (ann.): 0.0883
+Information Ratio: 0.8471
 
 Disclaimer: For education only. Not investment advice.
