@@ -2,14 +2,14 @@
 """
 Main orchestrator for static portfolio analysis.
 - Loads policy.yaml
-- Resolves universe (CLI > file > inline)
+- Resolves universe from policy (file > inline list)
 - Fetches prices (Stooq or Synthetic)
 - Optional pre-selection (Top by return / Sharpe)
 - Optimizes weights via PyPortfolioOpt (objective from YAML)
 - Optional buffet concentration enforcement (top-k min share)
 - Exports QuantStats HTML and extras
 """
-import os, json, argparse, pandas as pd, numpy as np
+import os, json, argparse, pandas as pd
 from mod.data_provider import get_prices_synthetic, get_prices_stooq
 from mod.qs_wrapper import basic_metrics, save_html_report
 from mod.risk_tools import to_simple_returns, portfolio_returns, portfolio_nav, annualized_cov, risk_contribution, corr_matrix, var_es_hist
@@ -22,29 +22,20 @@ from mod.backtest import Backtester
 from mod.concentration import enforce_topk_share
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Portfolio analysis with QuantStats + PyPortfolioOpt (Stooq backend only)")
-    p.add_argument("--source", choices=["synthetic","stooq"], default="synthetic")
-    p.add_argument("--tickers", nargs="+", default=None, help="Override asset universe at runtime")
-    p.add_argument("--weights", nargs="+", type=float, default=None)
-    p.add_argument("--start", type=str, default="2018-01-01")
-    p.add_argument("--end", type=str, default=None)
-    p.add_argument("--synthetic-start", type=str, default="2023-01-03")
-    p.add_argument("--synthetic-periods", type=int, default=252*2)
-    p.add_argument("--outdir", type=str, default="output")
-    p.add_argument("--title", type=str, default="QuantStats Report")
-    p.add_argument("--alpha", type=float, default=0.95)
-    p.add_argument("--config", type=str, default="policy.yaml", help="Policy YAML file")
-    p.add_argument("--mode", choices=["naive","buffet"], default=None, help="Override mode at runtime; does not modify YAML")
-    p.add_argument("--benchmark", type=str, default="SPY.US")
-    p.add_argument("--export-extras", action="store_true")
+    p = argparse.ArgumentParser(description="Portfolio analysis configured via YAML policy file")
+    p.add_argument("config", nargs="?", default="policy.yaml", help="Path to YAML configuration file")
     return p.parse_args()
 
 def normalize_weights(tickers, weights):
     if weights is None:
         return pd.Series([1.0/len(tickers)]*len(tickers), index=tickers)
-    if len(weights) != len(tickers):
-        raise ValueError("Length of weights must match tickers")
-    w = pd.Series(weights, index=tickers)
+    if isinstance(weights, dict):
+        w = pd.Series(weights, dtype=float)
+        w = w.reindex(tickers).fillna(0.0)
+    else:
+        if len(weights) != len(tickers):
+            raise ValueError("Length of weights must match tickers")
+        w = pd.Series(weights, index=tickers, dtype=float)
     s = w.sum()
     if s <= 0:
         raise ValueError("Sum of weights must be > 0")
@@ -52,31 +43,54 @@ def normalize_weights(tickers, weights):
 
 def main():
     args = parse_args()
-    os.makedirs(args.outdir, exist_ok=True)
-    suffix = "_synth" if args.source == "synthetic" else "_real"
-
-    # Load policy
     policy = load_policy(args.config)
+
+    data_cfg = policy.get("data") if isinstance(policy.get("data"), dict) else {}
+    source = str(data_cfg.get("source", "stooq")).strip().lower() if data_cfg else "stooq"
+    if source not in {"stooq", "synthetic"}:
+        raise ValueError(f"Unsupported data source '{source}'. Expected 'stooq' or 'synthetic'.")
+
+    reporting_cfg = policy.get("reporting") if isinstance(policy.get("reporting"), dict) else {}
+    outdir = reporting_cfg.get("output_dir") or reporting_cfg.get("outdir") or policy.get("output_dir") or "output"
+    title = reporting_cfg.get("title") or "QuantStats Report"
+    var_alpha = float(reporting_cfg.get("var_alpha") or reporting_cfg.get("alpha") or 0.95)
+    export_extras = bool(reporting_cfg.get("export_extras", False))
+
+    portfolio_cfg = policy.get("portfolio") if isinstance(policy.get("portfolio"), dict) else {}
+    weight_override = portfolio_cfg.get("initial_weights") if isinstance(portfolio_cfg, dict) else None
+
+    synthetic_cfg = data_cfg.get("synthetic") if isinstance(data_cfg.get("synthetic"), dict) else {}
+    synthetic_start = data_cfg.get("synthetic_start") or synthetic_cfg.get("start") or "2023-01-03"
+    synthetic_periods = data_cfg.get("synthetic_periods")
+    if synthetic_periods is None:
+        synthetic_periods = synthetic_cfg.get("periods")
+    synthetic_periods = int(synthetic_periods) if synthetic_periods is not None else (252 * 2)
+
+    os.makedirs(outdir, exist_ok=True)
+    suffix = "_synth" if source == "synthetic" else "_real"
+
     src = args.config if policy else "default"
 
     # Resolve mode
-    mode_in_use, mode_note = resolve_mode(args.mode, policy, src)
+    mode_in_use, mode_note = resolve_mode(None, policy, src)
     print(f"Mode in use: {mode_in_use} ({mode_note})")
 
     # Resolve universe
-    tickers_in_use, tickers_note = resolve_universe(args.tickers, policy)
+    tickers_in_use, tickers_note = resolve_universe(None, policy)
     print(f"Tickers in use: {tickers_in_use} ({tickers_note})")
 
     # Resolve dates and benchmark
-    start, end, bench_ticker = resolve_dates_and_benchmark(args, policy)
+    start, end, bench_ticker = resolve_dates_and_benchmark(policy, source)
 
     # Fetch prices
-    if args.source == "synthetic":
-        prices = get_prices_synthetic(tuple(tickers_in_use), start=args.synthetic_start, periods=args.synthetic_periods)
+    bench_symbol = bench_ticker.strip() if isinstance(bench_ticker, str) and bench_ticker.strip() else None
+
+    if source == "synthetic":
+        prices = get_prices_synthetic(tuple(tickers_in_use), start=synthetic_start, periods=synthetic_periods)
         bdf = None; bench_ret = None
     else:
         prices = get_prices_stooq(tuple(tickers_in_use), start=start, end=end)
-        bdf = get_prices_stooq((bench_ticker.strip(),), start=start, end=end) if bench_ticker else None
+        bdf = get_prices_stooq((bench_symbol,), start=start, end=end) if bench_symbol else None
         bench_ret = to_simple_returns(bdf).iloc[:, 0] if (bdf is not None and not bdf.empty) else None
 
     # Optional selection
@@ -90,17 +104,17 @@ def main():
         raise RuntimeError(f"Insufficient data rows: {ret.shape[0]}")
 
     # Initial equal weights
-    w0 = normalize_weights(tickers_in_use, args.weights)
+    w0 = normalize_weights(tickers_in_use, weight_override)
     pf_ret_0 = portfolio_returns(ret, w0)
     if pf_ret_0.empty:
         raise RuntimeError("Portfolio return series is empty.")
 
     # QuantStats
     metrics_equal = basic_metrics(pf_ret_0, benchmark=bench_ret)
-    metrics_equal_csv = os.path.join(args.outdir, f"qs_metrics_equal{suffix}.csv")
+    metrics_equal_csv = os.path.join(outdir, f"qs_metrics_equal{suffix}.csv")
     metrics_equal.to_csv(metrics_equal_csv, encoding="utf-8")
-    html_equal_path = os.path.join(args.outdir, f"qs_report_equal{suffix}.html")
-    save_html_report(pf_ret_0, html_equal_path, title=f"{args.title} - Equal Weights", benchmark=bench_ret)
+    html_equal_path = os.path.join(outdir, f"qs_report_equal{suffix}.html")
+    save_html_report(pf_ret_0, html_equal_path, title=f"{title} - Equal Weights", benchmark=bench_ret)
 
 
     # Optimization
@@ -123,31 +137,31 @@ def main():
             w_opt = enforce_topk_share(w_opt, topk=top_k, min_share=top_k_min_share, upper=upper_cap)
 
     # Save weights & returns
-    w0.to_frame("weight").to_csv(os.path.join(args.outdir, f"weights_initial{suffix}.csv"))
-    w_opt.to_frame("weight").to_csv(os.path.join(args.outdir, f"weights_optimized{suffix}.csv"))
-    pf_ret_0.to_frame("ret_initial").to_csv(os.path.join(args.outdir, f"returns_initial{suffix}.csv"))
+    w0.to_frame("weight").to_csv(os.path.join(outdir, f"weights_initial{suffix}.csv"))
+    w_opt.to_frame("weight").to_csv(os.path.join(outdir, f"weights_optimized{suffix}.csv"))
+    pf_ret_0.to_frame("ret_initial").to_csv(os.path.join(outdir, f"returns_initial{suffix}.csv"))
     pf_ret_opt = portfolio_returns(ret, w_opt)
-    pf_ret_opt.to_frame("ret_optimized").to_csv(os.path.join(args.outdir, f"returns_optimized{suffix}.csv"))
+    pf_ret_opt.to_frame("ret_optimized").to_csv(os.path.join(outdir, f"returns_optimized{suffix}.csv"))
 
     # Save QuantStats for optimized portfolio
     metrics_opt = basic_metrics(pf_ret_opt, benchmark=bench_ret)
-    metrics_opt_csv = os.path.join(args.outdir, f"qs_metrics_optimized{suffix}.csv")
+    metrics_opt_csv = os.path.join(outdir, f"qs_metrics_optimized{suffix}.csv")
     metrics_opt.to_csv(metrics_opt_csv, encoding="utf-8")
-    html_opt_path = os.path.join(args.outdir, f"qs_report_optimized{suffix}.html")
-    save_html_report(pf_ret_opt, html_opt_path, title=f"{args.title} - Optimized", benchmark=bench_ret)
+    html_opt_path = os.path.join(outdir, f"qs_report_optimized{suffix}.html")
+    save_html_report(pf_ret_opt, html_opt_path, title=f"{title} - Optimized", benchmark=bench_ret)
 
     # --- Combined report with two strategies in one HTML ---
     from mod.reporting_extras import save_dual_report
 
-    combined_path = os.path.join(args.outdir, f"qs_report_combined{suffix}.html")
+    combined_path = os.path.join(outdir, f"qs_report_combined{suffix}.html")
     save_dual_report(
         ret_a=pf_ret_0,
         ret_b=pf_ret_opt,
         label_a="Equal Weights",
         label_b="Optimized",
         benchmark=bench_ret,
-        benchmark_label=(bench_ticker if bench_ticker else "Benchmark"),
-        title=f"{args.title} - Combined",
+        benchmark_label=(bench_symbol or "Benchmark"),
+        title=f"{title} - Combined",
         out_html=combined_path,
     )
     print(f"Combined QuantStats-like report: {combined_path}")
@@ -175,42 +189,42 @@ def main():
             print(f"[warn] Backtest failed: {exc}")
 
     if backtest_result:
-        bt_path = os.path.join(args.outdir, f"backtest_{backtest_result['mode']}{suffix}.json")
+        bt_path = os.path.join(outdir, f"backtest_{backtest_result['mode']}{suffix}.json")
         with open(bt_path, "w", encoding="utf-8") as f:
             json.dump(backtest_result, f, indent=2)
         print(f"Backtest ({backtest_result['mode']}) saved to {bt_path}")
 
     # Extras
-    if args.export_extras:
+    if export_extras:
         nav = portfolio_nav(pf_ret_0, 1.0)
         cov_a = annualized_cov(ret)
         rc = risk_contribution(w0, cov_a).sort_values(ascending=False)
         corr = corr_matrix(ret)
-        var95 = var_es_hist(pf_ret_0, alpha=args.alpha)
-        var99 = var_es_hist(pf_ret_0, alpha=0.99 if args.alpha < 0.99 else 0.95)
+        var95 = var_es_hist(pf_ret_0, alpha=var_alpha)
+        var99 = var_es_hist(pf_ret_0, alpha=0.99 if var_alpha < 0.99 else 0.95)
 
         rel_metrics = None
         if bench_ret is not None:
             idx = pf_ret_0.index.intersection(bench_ret.index)
             if len(idx) > 0:
                 excess = (pf_ret_0.loc[idx] - bench_ret.loc[idx]).dropna()
-                excess.to_frame('excess_return').to_csv(os.path.join(args.outdir, f"excess_returns{suffix}.csv"))
+                excess.to_frame('excess_return').to_csv(os.path.join(outdir, f"excess_returns{suffix}.csv"))
                 rel_metrics = compute_relative_metrics(pf_ret_0, bench_ret)
 
-        save_core_csvs(pf_ret_0, nav, rc, corr, args.outdir)
-        plot_prices(prices, args.outdir, suffix,
+        save_core_csvs(pf_ret_0, nav, rc, corr, outdir)
+        plot_prices(prices, outdir, suffix,
             benchmark=(bdf.iloc[:, 0] if bdf is not None and not bdf.empty else None),
-            benchmark_label=(bench_ticker if bench_ticker else 'Benchmark'))
-        plot_nav(nav, args.outdir)
-        plot_corr(corr, args.outdir)
+            benchmark_label=(bench_symbol or 'Benchmark'))
+        plot_nav(nav, outdir)
+        plot_corr(corr, outdir)
 
         peak, trough, mdd = max_drawdown_from_nav(nav)
         text = make_text_report(tickers_in_use, w0,
             opt.get("ann_return", float("nan")), opt.get("ann_vol", float("nan")), opt.get("sharpe", float("nan")),
             (peak, trough, mdd), var95, var99, relative_metrics=rel_metrics)
-        with open(os.path.join(args.outdir, f"report{suffix}.txt"), "w", encoding="utf-8") as f:
+        with open(os.path.join(outdir, f"report{suffix}.txt"), "w", encoding="utf-8") as f:
             f.write(text)
-        print(f"Extra outputs saved to {args.outdir}")
+        print(f"Extra outputs saved to {outdir}")
 
 if __name__ == "__main__":
     main()

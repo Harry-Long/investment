@@ -24,17 +24,30 @@ def resolve_mode(cli_mode: Optional[str], policy: Dict, src_label: str) -> Tuple
     note = "overridden by CLI" if cli_mode is not None else f"from {src_label}"
     return mode_in_use, note
 
-def resolve_dates_and_benchmark(args, policy: Dict):
-    """Resolve start, end, benchmark from policy.data with CLI fallback."""
-    pol_data = policy.get("data") if isinstance(policy, dict) else {}
-    start = args.start if args.source == "stooq" else args.synthetic_start
-    end = args.end
-    if args.source == "stooq":
-        if pol_data.get("start"):
-            start = str(pol_data.get("start"))
-        if pol_data.get("end") not in (None, "", "null"):
-            end = str(pol_data.get("end"))
-    bench = args.benchmark
-    if isinstance(pol_data.get("benchmark"), str) and pol_data.get("benchmark"):
-        bench = pol_data.get("benchmark")
-    return start, end, bench
+def resolve_dates_and_benchmark(policy: Dict, source: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """
+    Resolve start, end, and benchmark tickers from the policy.
+
+    Parameters
+    ----------
+    policy: Dict
+        Parsed YAML configuration.
+    source: str
+        Price source identifier ("stooq" or "synthetic").
+    """
+
+    data = policy.get("data", {}) if isinstance(policy, dict) else {}
+
+    if source == "stooq":
+        start = data.get("start") or "2018-01-01"
+        end_val = data.get("end")
+        end = None if end_val in (None, "", "null") else str(end_val)
+    else:
+        synthetic_cfg = data.get("synthetic") if isinstance(data.get("synthetic"), dict) else {}
+        start = data.get("synthetic_start") or synthetic_cfg.get("start") or "2023-01-03"
+        end = None
+
+    bench = data.get("benchmark") or policy.get("benchmark")
+    bench = bench.strip() if isinstance(bench, str) else bench
+
+    return (str(start) if start is not None else None, end, bench)
