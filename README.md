@@ -8,29 +8,23 @@ mamba install -c conda-forge pandas numpy matplotlib quantstats pypfopt pandas-d
 ```
 
 ## Run
-Use Stooq with YAML universe/file:
+1. Adjust `portfolio_agent/policy.yaml` as needed (data source, reporting, portfolio settings).
+2. Execute the runner with the policy file:
+
 ```bash
-python run.py --source stooq --export-extras
+python portfolio_agent/run.py [optional/path/to/config.yaml]
 ```
 
-Override tickers and mode from CLI:
-```bash
-python run.py --source stooq --tickers AAPL.US MSFT.US NVDA.US --mode naive --export-extras
-```
-
-Use synthetic data:
-```bash
-python run.py --source synthetic --export-extras
-```
+If no path is supplied the default `portfolio_agent/policy.yaml` is used. Switch to synthetic prices by setting `data.source: synthetic` in the YAML.
 
 ## Files
-- `run.py` — main orchestrator
+- `portfolio_agent/run.py` — main orchestrator
 - `mod/data_provider.py` — Stooq and synthetic price loaders
 - `mod/qs_wrapper.py` — QuantStats wrappers
 - `mod/risk_tools.py` — returns, covariance, VaR/ES, nav
 - `mod/reporting_extras.py` — CSV/plots/text report
 - `mod/policy.py` — policy parsing and mode/dates/benchmark resolution
-- `mod/universe.py` — universe resolution (CLI > file > YAML)
+- `mod/universe.py` — universe resolution (policy file)
 - `mod/selector.py` — pre-optimization selection (top by return / Sharpe)
 - `mod/optimizer.py` — PyPortfolioOpt objective dispatch + multi-objective engine
 - `mod/perf_metrics.py` — shared performance/risk helpers
