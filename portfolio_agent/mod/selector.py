@@ -1,8 +1,25 @@
 # mod/selector.py
 from __future__ import annotations
+import os
 import numpy as np
 import pandas as pd
-from typing import Tuple, Dict, List
+from typing import Tuple, Dict, List, Optional
+
+
+def load_candidate_universe(path: Optional[str] = None) -> List[str]:
+    """
+    Load tickers from the candidate universe text file.
+
+    Parameters
+    ----------
+    path : str, optional
+        Explicit path to the universe file. Defaults to data/universe/universe.txt.
+    """
+    target = path or os.path.join("data", "universe", "universe.txt")
+    if not os.path.exists(target):
+        return []
+    tickers = pd.read_csv(target, header=None)[0].astype(str).str.strip().tolist()
+    return [t for t in tickers if t]
 
 def select_assets(prices: pd.DataFrame, policy: Dict) -> Tuple[pd.DataFrame, List[str], str]:
     """
@@ -18,6 +35,27 @@ def select_assets(prices: pd.DataFrame, policy: Dict) -> Tuple[pd.DataFrame, Lis
     max_count = int(port.get("max_count", len(prices.columns)))
     target_count = int(port.get("target_count", min(max_count, len(prices.columns))))
     target_count = max(min_count, min(target_count, max_count, len(prices.columns)))
+
+    note_parts: List[str] = []
+
+    # Optional candidate universe gating
+    cand_cfg = policy.get("candidate_pool") if isinstance(policy, dict) else {}
+    if isinstance(cand_cfg, dict):
+        persistence = cand_cfg.get("persistence", {}) if isinstance(cand_cfg.get("persistence"), dict) else {}
+        universe_path = persistence.get("current_path")
+        if not universe_path:
+            out_dir = persistence.get("out_dir") or os.path.join("data", "universe")
+            universe_path = os.path.join(out_dir, "universe.txt")
+        candidate = load_candidate_universe(universe_path)
+        if candidate:
+            cols = [c for c in prices.columns if c in candidate]
+            if cols:
+                removed = len(prices.columns) - len(cols)
+                if removed > 0:
+                    note_parts.append(f"candidate_gate=filtered_{removed}")
+                prices = prices[cols]
+            else:
+                note_parts.append("candidate_gate=empty_intersection")
 
     if method in ("none", "", "null"):
         return prices, list(prices.columns), "selection=none"
@@ -41,5 +79,8 @@ def select_assets(prices: pd.DataFrame, policy: Dict) -> Tuple[pd.DataFrame, Lis
         chosen += remaining[: (min_count - len(chosen))]
     chosen = chosen[:max_count]
 
-    note = f"selection={method}, lookback_days={lookback}, chosen={len(chosen)}/{len(prices.columns)}"
+    base_note = f"selection={method}, lookback_days={lookback}, chosen={len(chosen)}/{len(prices.columns)}"
+    if note_parts:
+        base_note = ", ".join(note_parts + [base_note])
+    note = base_note
     return prices[chosen], chosen, note

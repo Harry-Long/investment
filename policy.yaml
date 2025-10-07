@@ -1,11 +1,52 @@
 version: 1
 data:
-  source: stooq                     # options: stooq, synthetic
-  universe_file: ./universe.txt     # or provide inline 'universe' below
+  source: stooq                     # options: stooq, synthetic, yfinance
+  use_yfinance: false                   # enable Yahoo metadata/fundamentals
+  yfinance_chunk_size: 20              # optional rate-limit controls (default 50)
+  yfinance_call_delay: 0.6            # seconds sleep between chunks
+  yfinance_max_retries: 5              # retry attempts when rate limited
+  yfinance_retry_backoff: 2.0          # exponential backoff factor for retries
+  cache:
+    enabled: true
+    dir: data/cache
+    expiry_days: 3
+  universe_file: data/universe/universe.txt
   universe: []                      # fallback if file not provided
   start: 2018-01-01
   end: null
   benchmark: SPY.US
+
+candidate_pool:
+  target_size: 200
+  tolerance: 10
+  data_source: provider_default
+  base_universe_file: data/universe/sp1500.txt
+  exclude:
+    etf: true
+    adr: true
+    penny: true
+    st: false
+  base_filters:
+    min_price: 5.0
+    min_mcap: 1500000000
+    min_adv20: 5000000
+    min_days_listed: 180
+  factors:
+    momentum: 0.30
+    quality: 0.25
+    value: 0.20
+    stability: 0.15
+    liquidity: 0.10
+  neutralize:
+    by_sector: true
+    cap_bucket: true
+  constraints:
+    max_per_sector: 0.25
+    max_weight_single: 0.01
+  persistence:
+    out_dir: data/universe
+    save_snapshot: true
+    write_symlink: true
 
 portfolio:
   mode: buffet

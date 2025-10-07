@@ -34,6 +34,13 @@ Agentic AI agent for investment assistance
   - 支持用户自定义约束（例如前 5 大股票占比 > 50%）。  
   - 股票筛选和集中度控制。  
 
+- **Stock Analysis & Candidate Pool (`stock_analysis.py`)**  
+  - `CandidatePoolBuilder` 读取 policy.yaml 的 `candidate_pool` 配置，串联元数据过滤、横截面因子与行业/市值中性化。  
+  - 自动将打分靠前的 ~200 只美股写入 `data/universe/universe_YYYYMMDD_*.txt` 并更新 `universe.txt`。  
+  - `selector` 运行前可自动读取该候选池，叠加策略级筛选与约束。  
+  - 默认 DataProvider 读取 `candidate_pool.base_universe_file`（或 `data.universe_file`）的种子列表，并通过 yfinance/Stooq 补足元数据与行情。  
+  - 使用 `python -m portfolio_agent.tools.build_base_universe --out data/universe/all_us_common.txt` 可从 Nasdaq Trader 目录快速生成美股全量清单。  
+
 - **Reporting (`qs_wrapper.py`, `reporting_extras.py`)**  
   - 基于 QuantStats 生成单策略报告（等权 / 优化）。  
   - 已扩展支持 **组合报告**（两条策略曲线 + 指标对比）。  
