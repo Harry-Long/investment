@@ -1,7 +1,7 @@
 version: 1
 data:
-  source: stooq                     # options: stooq, synthetic, yfinance
-  use_yfinance: false                   # enable Yahoo metadata/fundamentals
+  source: yfinance                     # options: stooq, synthetic, yfinance
+  use_yfinance: true                   # enable Yahoo metadata/fundamentals
   yfinance_chunk_size: 20              # optional rate-limit controls (default 50)
   yfinance_call_delay: 0.6            # seconds sleep between chunks
   yfinance_max_retries: 5              # retry attempts when rate limited
