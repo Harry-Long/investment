@@ -301,19 +301,22 @@ class CandidatePoolBuilder:
                 "inv_pe": _safe_inverse(_get_series(fundamentals, "pe", tickers_index)),
                 "inv_pb": _safe_inverse(_get_series(fundamentals, "pb", tickers_index)),
                 "inv_ev_ebitda": inv_ev,
+                "fcf_yield": _get_series(fundamentals, "fcf_yield", tickers_index),
             }
         )
-        value_score = value_components.mean(axis=1).rename("value")
+        value_score = value_components.mean(axis=1).rename("value").fillna(0.0)
 
         quality_components = pd.DataFrame(
             {
                 "roe": _get_series(fundamentals, "roe", tickers_index),
+                "roic": _get_series(fundamentals, "roic", tickers_index),
                 "gross_margin": _get_series(fundamentals, "gross_margin", tickers_index),
                 "profit_stability": -_get_series(fundamentals, "profit_volatility", tickers_index),
                 "debt_load": -_get_series(fundamentals, "debt_to_equity", tickers_index),
+                "net_debt_to_ebitda": -_get_series(fundamentals, "net_debt_to_ebitda", tickers_index),
             }
         )
-        quality_score = quality_components.mean(axis=1).rename("quality")
+        quality_score = quality_components.mean(axis=1).rename("quality").fillna(0.0)
 
         stability_components = pd.DataFrame(
             {

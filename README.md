@@ -4,7 +4,13 @@
 We recommend conda/mamba:
 
 ```bash
-mamba install -c conda-forge pandas numpy matplotlib quantstats pypfopt pandas-datareader pyyaml
+mamba install -c conda-forge pandas numpy matplotlib quantstats pypfopt pandas-datareader pyyaml requests
+```
+
+Before building the candidate pool with live data, supply a Financial Modeling Prep key via `policy.yaml` (`data.api_keys.fmp`) or export it as an environment variable:
+
+```bash
+export FMP_API_KEY="YOUR_KEY"
 ```
 
 ## Run
@@ -38,14 +44,29 @@ mamba install -c conda-forge pandas numpy matplotlib quantstats pypfopt pandas-d
    python portfolio_agent/run.py [optional/path/to/config.yaml]
    ```
 
-If no path is supplied the default `policy.yaml` at the repo root is used. Switch to synthetic prices by setting `data.source: synthetic`. When using yfinance you can tune rate limits with `data.yfinance_chunk_size`, `data.yfinance_call_delay`, and the retry settings in the YAML to avoid hitting Yahoo throttling.
+If no path is supplied the default `policy.yaml` at the repo root is used. Switch to synthetic prices by setting `data.source: synthetic`. When using yfinance you can tune rate limits with `data.yfinance_chunk_size`, `data.yfinance_call_delay`, and the retry settings in the YAML to avoid hitting Yahoo throttling. FMP pacing is controlled via `data.fmp.batch_size` and `data.fmp.call_delay` (default 12 s between calls for the free tier).
 
 ## Files
 - `portfolio_agent/run.py` — main orchestrator
-- `mod/data_provider.py` — flexible loader (Stooq, yfinance, synthetic) + metadata/fundamentals
+- `mod/data_provider.py` — flexible loader (Stooq, FMP, yfinance, synthetic) + metadata/fundamentals
+- `mod/fmp_client.py` — thin Financial Modeling Prep batch client (profiles + ratios)
 - `mod/stock_analysis.py` — candidate pool builder with scoring & persistence
 - `portfolio_agent/tools/build_sp1500_universe.py` — helper for S&P 500/400/600 combined list
 - `portfolio_agent/tools/build_base_universe.py` — helper for downloading all US common stocks
+
+## Data Pipeline Overview
+
+1. **Data Provider** (`portfolio_agent/mod/data_provider.py`) normalizes the policy settings, hydrates metadata via FMP profiles, merges ratios and key metrics, and persists everything to disk with atomic cache writes.
+2. **FMP Client** (`portfolio_agent/mod/fmp_client.py`) drives the live requests, adapts the call delay when rate limits are hit, skips symbols that return premium-only errors for a cooldown period, and can optionally suppress per-ticker logging (`data.fmp.log_each_ticker: false`).
+3. **Candidate Builder** (`portfolio_agent/mod/stock_analysis.py`) applies universe filters, computes factors with smarter fallbacks (PE/PB/EV, FCF yield, ROE/ROIC, leverage), neutralises exposures, and exports the selected universe snapshot.
+4. **Portfolio Runner** (`portfolio_agent/run.py`) loads the policy, resolves the universe, pulls prices (Stooq or synthetic), performs selection, runs optimisations, and writes QuantStats reports.
+
+### Key Configuration Knobs
+
+- `data.fmp.adapt_rate` / `max_call_delay` / `success_threshold` tune the adaptive throttling.
+- `data.fmp.error_retry_seconds` controls how long to skip tickers that hit premium or auth errors.
+- `data.fmp.log_each_ticker` toggles per-ticker logging for quieter builds.
+- `candidate_pool.base_universe_file` can be swapped for a pilot subset while caches warm up.
 - `mod/qs_wrapper.py` — QuantStats wrappers
 - `mod/risk_tools.py` — returns, covariance, VaR/ES, nav
 - `mod/reporting_extras.py` — CSV/plots/text report

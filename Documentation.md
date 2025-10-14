@@ -4,8 +4,13 @@ Agentic AI agent for investment assistance
 ## Current Modules
 
 - **Data Provider (`data_provider.py`)**  
-  - 支持获取股票价格（目前通过 `stooq` 和合成数据）。  
-  - 提供基础数据输入接口。  
+  - 支持获取股票价格（目前通过 `stooq` 和合成数据`synthetic`，可选 `yfinance`）。  
+  - 元数据与基本面默认调用 Financial Modeling Prep（`fmp_client.py`），同时保留 yfinance 作为后备。  
+  - 缓存写入采用原子方式，避免进程中断导致的半成品文件；可配置 FMP 的重试冷却与逐条日志输出。  
+
+- **FMP Client (`fmp_client.py`)**  
+  - 封装 FMP 的 `profile`、`ratios-ttm` 与 `key-metrics-ttm` 接口，一次请求一个股票。  
+  - 自适应节流：遭遇 429 自动放慢节奏，连续成功后逐步回落；Premium/授权错误会对单票进入冷却，避免无谓重试。  
 
 - **Portfolio Construction & Optimization (`optimizer.py`)**  
   - 等权重组合。  
@@ -38,8 +43,9 @@ Agentic AI agent for investment assistance
   - `CandidatePoolBuilder` 读取 policy.yaml 的 `candidate_pool` 配置，串联元数据过滤、横截面因子与行业/市值中性化。  
   - 自动将打分靠前的 ~200 只美股写入 `data/universe/universe_YYYYMMDD_*.txt` 并更新 `universe.txt`。  
   - `selector` 运行前可自动读取该候选池，叠加策略级筛选与约束。  
-  - 默认 DataProvider 读取 `candidate_pool.base_universe_file`（或 `data.universe_file`）的种子列表，并通过 yfinance/Stooq 补足元数据与行情。  
+  - 默认 DataProvider 读取 `candidate_pool.base_universe_file`（或 `data.universe_file`）的种子列表，价格来自 Stooq，元数据/基本面由 FMP 获取（需配置 `FMP_API_KEY`）。  
   - 使用 `python -m portfolio_agent.tools.build_base_universe --out data/universe/all_us_common.txt` 可从 Nasdaq Trader 目录快速生成美股全量清单。  
+  - 因子计算新增 FCF 收益率、ROIC、净债务/EBITDA 等回退指标，数据缺位时可保持更多股票。  
 
 - **Reporting (`qs_wrapper.py`, `reporting_extras.py`)**  
   - 基于 QuantStats 生成单策略报告（等权 / 优化）。  

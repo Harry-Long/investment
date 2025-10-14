@@ -1,7 +1,17 @@
 version: 1
 data:
-  source: yfinance                     # options: stooq, synthetic, yfinance
-  use_yfinance: true                   # enable Yahoo metadata/fundamentals
+  source: stooq                        # price history source (stooq, synthetic)
+  price_source: stooq                  # override to yfinance for Yahoo pricing
+  metadata_source: fmp                 # options: fmp, yfinance
+  fundamentals_source: fmp             # options: fmp, yfinance
+  api_keys:
+    fmp: "NC03SC7kceZU55sPMw0H79Ih1QzftScM"        # replace with your Financial Modeling Prep key
+  use_yfinance: false                  # keep available as a fallback path
+  fmp:
+    batch_size: 100                    # max tickers per call (comma-delimited)
+    call_delay: 6.0                    # seconds between calls (free tier ~5/min)
+    max_retries: 3
+    timeout: 30.0
   yfinance_chunk_size: 20              # optional rate-limit controls (default 50)
   yfinance_call_delay: 0.6            # seconds sleep between chunks
   yfinance_max_retries: 5              # retry attempts when rate limited
@@ -20,7 +30,7 @@ candidate_pool:
   target_size: 200
   tolerance: 10
   data_source: provider_default
-  base_universe_file: data/universe/sp1500.txt
+  base_universe_file: data/universe/pilot_subset.txt
   exclude:
     etf: true
     adr: true
@@ -58,7 +68,7 @@ portfolio:
 
   # selection method before optimization
   selection:
-    method: top_by_sharpe          # options: top_by_1y_return, top_by_sharpe, none
+    method: none          # options: top_by_1y_return, top_by_sharpe, none
     lookback_days: 252
 
   # optimization objective and parameters
