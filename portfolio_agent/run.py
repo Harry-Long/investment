@@ -22,8 +22,15 @@ from mod.backtest import Backtester
 from mod.concentration import enforce_topk_share
 
 def parse_args():
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+    default_cfg = os.path.join(base_dir, "policy.yaml")
     p = argparse.ArgumentParser(description="Portfolio analysis configured via YAML policy file")
-    p.add_argument("config", nargs="?", default="policy.yaml", help="Path to YAML configuration file")
+    p.add_argument(
+        "config",
+        nargs="?",
+        default=default_cfg,
+        help=f"Path to YAML configuration file (default: {default_cfg})",
+    )
     return p.parse_args()
 
 def normalize_weights(tickers, weights):
@@ -76,7 +83,7 @@ def main():
     print(f"Mode in use: {mode_in_use} ({mode_note})")
 
     # Resolve universe
-    tickers_in_use, tickers_note = resolve_universe(None, policy)
+    tickers_in_use, tickers_note = resolve_universe(policy)
     print(f"Tickers in use: {tickers_in_use} ({tickers_note})")
 
     # Resolve dates and benchmark
@@ -119,8 +126,17 @@ def main():
 
     # Optimization
     opt = optimize_portfolio(prices, policy)
-    engine = opt.get("engine", "pyportfolioopt")
-    w_opt = pd.Series(opt["weights"]).reindex(prices.columns).fillna(0.0)
+    model_name = opt.get("model", "mean_variance")
+    objective_name = opt.get("objective")
+    w_opt = pd.Series(opt["weights"], dtype=float).reindex(prices.columns).fillna(0.0)
+
+    print(f"\nOptimization model: {model_name}" + (f" [{objective_name}]" if objective_name else ""))
+    solver_info = opt.get("details", {})
+    if isinstance(solver_info, dict) and solver_info.get("solver"):
+        print(f"Optimizer backend: {solver_info['solver']}")
+    guardrails_info = opt.get("guardrails") or {}
+    if guardrails_info:
+        print(f"Guardrails applied: {guardrails_info}")
 
     # Buffet concentration
     if mode_in_use == "buffet":
@@ -171,9 +187,20 @@ def main():
     print(w0.round(4).to_string())
     print("\nOptimized weights")
     print(w_opt.round(4).to_string())
-    print(f"\nOptimization engine: {engine}")
-    print("Optimized performance (estimate)")
-    print({k: (round(v, 4) if isinstance(v, float) else v) for k, v in opt.items() if k != "weights"})
+    perf_snapshot = {
+        k: (round(opt.get(k), 4) if isinstance(opt.get(k), float) else opt.get(k))
+        for k in ("ann_return", "ann_vol", "sharpe", "max_drawdown")
+        if opt.get(k) is not None
+    }
+    print("\nOptimized performance (in-sample)")
+    print(perf_snapshot)
+    notable_solver_fields = {}
+    if isinstance(solver_info, dict):
+        for key in ("risk_aversion_used", "tau", "absolute_views"):
+            if key in solver_info:
+                notable_solver_fields[key] = solver_info[key]
+    if notable_solver_fields:
+        print(f"Optimizer notes: {notable_solver_fields}")
     # print(f"QuantStats HTML report: {html_path}")
     # print(f"QuantStats metrics CSV: {metrics_csv}")
 

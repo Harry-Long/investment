@@ -20,43 +20,11 @@ data:
     enabled: true
     dir: data/cache
     expiry_days: 3
-  universe_file: data/universe/universe.txt
-  universe: []                      # fallback if file not provided
+  stockrover_file: /Users/harryzhang/Library/CloudStorage/Dropbox/investment/data/universe/universe.txt   # StockRover export that defines the investable universe
+  universe: []                      # legacy fallback if no file is provided
   start: 2018-01-01
   end: null
   benchmark: SPY.US
-
-candidate_pool:
-  target_size: 200
-  tolerance: 10
-  data_source: provider_default
-  base_universe_file: data/universe/pilot_subset.txt
-  exclude:
-    etf: true
-    adr: true
-    penny: true
-    st: false
-  base_filters:
-    min_price: 5.0
-    min_mcap: 1500000000
-    min_adv20: 5000000
-    min_days_listed: 180
-  factors:
-    momentum: 0.30
-    quality: 0.25
-    value: 0.20
-    stability: 0.15
-    liquidity: 0.10
-  neutralize:
-    by_sector: true
-    cap_bucket: true
-  constraints:
-    max_per_sector: 0.25
-    max_weight_single: 0.01
-  persistence:
-    out_dir: data/universe
-    save_snapshot: true
-    write_symlink: true
 
 portfolio:
   mode: buffet
@@ -73,27 +41,22 @@ portfolio:
 
   # optimization objective and parameters
   optimization:
-    engine: multi_objective        # options: pyportfolioopt, multi_objective
-    objective: max_sharpe          # options: max_sharpe, min_volatility, efficient_risk, efficient_return, max_quadratic_utility
+    model: mean_variance           # options: mean_variance, black_litterman, risk_parity, equal_weight
+    frequency: 252
     risk_free_rate: 0.0
-    l2_gamma: 0.001
+    long_only: true
+    leverage: 1.0
     weight_bounds: [0.0, 0.35]
-    target_volatility: 0.12        # used only if objective=efficient_risk
-    target_return: 0.10            # used only if objective=efficient_return
-    risk_aversion: 1.0             # used only if objective=max_quadratic_utility
-    multi_objective:               # used only if engine=multi_objective
-      objectives:
-        maximize_sharpe: 0.4
-        maximize_return: 0.2
-        minimize_volatility: 0.2
-        minimize_max_drawdown: 0.2
-      targets:
-        target_volatility: 0.18
-        target_max_drawdown: 0.30
-      long_only: true
-      min_weight: 0.0
-      max_weight: 0.7
-      leverage: 1.0
+    guardrails:
+      max_volatility: 0.18
+      min_return: 0.05
+    black_litterman:
+      tau: 0.05                    # shrinkage applied to the prior covariance
+      risk_aversion: 2.5           # equilibrium risk aversion used for posterior weights
+      market_caps: {}              # optional: {AAPL.US: 2.7e12, MSFT.US: 2.5e12}
+      absolute_views: {}           # optional: {NVDA.US: 0.15, META.US: 0.10}
+    risk_parity:
+      method: inverse_volatility   # placeholder for future extensions
 
   # concentration rules (applied only if mode=buffet)
   concentration:
@@ -123,5 +86,5 @@ reporting:
 
 notes:
   - "Run with: python portfolio_agent/run.py [optional_config_path]."
-  - "Update data.universe_file or data.universe to control the asset list."
+  - "Update data.stockrover_file to point at the latest StockRover export."
   - "All analysis is for educational purposes only."

@@ -1,20 +1,20 @@
 Portfolio Analysis Summary (Educational Only)
 -------------------------------------------
-Tickers: ['NVDA.US', 'QQQ.US', 'VXUS.US', 'MSFT.US', 'VTI.US', 'AMZN.US', 'AAPL.US', 'BND.US']
-Weights: {'NVDA.US': np.float64(0.125), 'QQQ.US': np.float64(0.125), 'VXUS.US': np.float64(0.125), 'MSFT.US': np.float64(0.125), 'VTI.US': np.float64(0.125), 'AMZN.US': np.float64(0.125), 'AAPL.US': np.float64(0.125), 'BND.US': np.float64(0.125)}
+Tickers: ['JPM', 'JNJ', 'GOOGL', 'AVGO', 'PEP', 'AMZN', 'PG', 'XOM', 'CVX', 'NVDA', 'ABBV', 'MRK', 'AAPL', 'MSFT', 'TSLA', 'UNH', 'META', 'V']
+Weights: {'JPM': np.float64(0.05555555555555555), 'JNJ': np.float64(0.05555555555555555), 'GOOGL': np.float64(0.05555555555555555), 'AVGO': np.float64(0.05555555555555555), 'PEP': np.float64(0.05555555555555555), 'AMZN': np.float64(0.05555555555555555), 'PG': np.float64(0.05555555555555555), 'XOM': np.float64(0.05555555555555555), 'CVX': np.float64(0.05555555555555555), 'NVDA': np.float64(0.05555555555555555), 'ABBV': np.float64(0.05555555555555555), 'MRK': np.float64(0.05555555555555555), 'AAPL': np.float64(0.05555555555555555), 'MSFT': np.float64(0.05555555555555555), 'TSLA': np.float64(0.05555555555555555), 'UNH': np.float64(0.05555555555555555), 'META': np.float64(0.05555555555555555), 'V': np.float64(0.05555555555555555)}
 
 Performance and Risk
-Annualized Return: 0.2069
-Annualized Volatility: 0.1725
-Sharpe: 1.1763
-Max Drawdown: -0.3301  Window: 2021-11-19 00:00:00 to 2022-10-14 00:00:00
+Annualized Return: 0.2223
+Annualized Volatility: 0.1800
+Sharpe: 1.2057
+Max Drawdown: -0.3309  Window: 2020-02-19 00:00:00 to 2020-03-23 00:00:00
 
-95% VaR: -0.0223   95% ES: -0.0330
-99% VaR: -0.0386   99% ES: -0.0510
+95% VaR: -0.0185   95% ES: -0.0313
+99% VaR: -0.0375   99% ES: -0.0530
 
 Relative to benchmark
-Annualized Excess Return: 0.0748
-Tracking Error (ann.): 0.0883
-Information Ratio: 0.8471
+Annualized Excess Return: 0.0834
+Tracking Error (ann.): 0.0552
+Information Ratio: 1.5110
 
 Disclaimer: For education only. Not investment advice.
