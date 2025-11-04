@@ -17,6 +17,7 @@ from mod.reporting_extras import save_core_csvs, plot_nav, plot_corr, plot_price
 from mod.policy import load_policy, resolve_mode, resolve_dates_and_benchmark
 from mod.universe import resolve_universe
 from mod.selector import select_assets
+from mod.fixed_positions import load_fixed_positions
 from mod.optimizer import optimize_portfolio
 from mod.backtest import Backtester
 from mod.concentration import enforce_topk_share
@@ -86,6 +87,15 @@ def main():
     tickers_in_use, tickers_note = resolve_universe(policy)
     print(f"Tickers in use: {tickers_in_use} ({tickers_note})")
 
+    fixed_weights_policy, fixed_meta = load_fixed_positions(policy, tickers_in_use)
+    locked_tickers = list(fixed_weights_policy.index)
+    if locked_tickers:
+        print(f"Locked tickers (fixed positions): {locked_tickers}")
+        print(f"Locked weight hints: {fixed_weights_policy.round(4).to_dict()}")
+        auto_assigned = [t for t, meta in fixed_meta.items() if meta.get("auto_weight")]
+        if auto_assigned:
+            print(f"Auto-weight fallback applied for: {auto_assigned}")
+
     # Resolve dates and benchmark
     start, end, bench_ticker = resolve_dates_and_benchmark(policy, source)
 
@@ -101,7 +111,25 @@ def main():
         bench_ret = to_simple_returns(bdf).iloc[:, 0] if (bdf is not None and not bdf.empty) else None
 
     # Optional selection
-    prices, chosen_list, sel_note = select_assets(prices, policy)
+    prices_selected, chosen_list, sel_note = select_assets(prices, policy)
+    if locked_tickers:
+        desired = set(chosen_list).union(locked_tickers)
+        missing_locked = [t for t in locked_tickers if t not in prices.columns]
+        if missing_locked:
+            raise ValueError(f"Locked tickers missing from price data: {missing_locked}")
+        ordered: list[str] = []
+        seen: set[str] = set()
+        for col in prices.columns:
+            if col in desired and col not in seen:
+                ordered.append(col)
+                seen.add(col)
+        forced = len(ordered) - len(chosen_list)
+        if forced > 0:
+            sel_note = f"{sel_note}, locked_forced={forced}"
+        prices = prices.loc[:, ordered]
+        chosen_list = ordered
+    else:
+        prices = prices_selected
     print(f"Asset selection: {sel_note}")
     tickers_in_use = chosen_list
 

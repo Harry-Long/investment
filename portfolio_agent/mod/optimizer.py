@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from .perf_metrics import annualize_return, equity_curve, max_drawdown, sharpe_ratio, volatility
+from .fixed_positions import load_fixed_positions
 from .risk_tools import annualized_cov, risk_contribution
 
 try:  # scipy is required for the Sharpe guardrail solver
@@ -461,6 +462,90 @@ def _risk_parity_weights(
     return {"weights": weights_series, "details": details}
 
 
+def _optimise_free_slice(
+    returns: pd.DataFrame,
+    config: Dict,
+    model: str,
+    long_only: bool,
+    min_weight: Optional[float],
+    max_weight: Optional[float],
+    target_leverage: float,
+    freq: int,
+    risk_free_rate: float,
+) -> Tuple[pd.Series, str, Dict[str, object], Dict[str, float], Optional[str]]:
+    details: Dict[str, object] = {}
+    guardrails: Dict[str, float] = {}
+    canonical_model = model
+    objective = config.get("objective")
+
+    if target_leverage <= 0 or returns.empty:
+        empty = pd.Series(0.0, index=returns.columns, dtype=float)
+        details["solver"] = "None"
+        return empty, canonical_model, details, guardrails, objective
+
+    if model in ("mean_variance", "mv", "sharpe", "sharpe_guardrail"):
+        optimiser_cfg = dict(config)
+        if min_weight is not None:
+            optimiser_cfg["min_weight"] = min_weight
+        if max_weight is not None:
+            optimiser_cfg["max_weight"] = max_weight
+        optimiser_cfg["leverage"] = target_leverage
+        optimiser_cfg["long_only"] = long_only
+        optimizer = SharpeGuardrailOptimizer(returns=returns, cfg=optimiser_cfg)
+        weights_arr = optimizer.optimize()
+        weights_series = pd.Series(weights_arr, index=returns.columns, dtype=float)
+        guardrails = optimizer.guardrails
+        details["solver"] = "SharpeGuardrailOptimizer"
+        details["objective"] = "max_sharpe"
+        canonical_model = "mean_variance"
+        objective = objective or "max_sharpe"
+    elif model in ("black_litterman", "black-litterman", "bl"):
+        bl_res = _black_litterman_weights(
+            returns=returns,
+            config=config,
+            freq=freq,
+            long_only=long_only,
+            min_weight=min_weight,
+            max_weight=max_weight,
+            target_leverage=target_leverage,
+        )
+        weights_series = bl_res["weights"]
+        details.update(bl_res.get("details", {}))
+        details["solver"] = "BlackLittermanClosedForm"
+        details.setdefault("objective", "max_expected_utility")
+        canonical_model = "black_litterman"
+        objective = objective or details.get("objective")
+    elif model in ("risk_parity", "risk-parity", "rp", "hrp"):
+        rp_res = _risk_parity_weights(
+            returns=returns,
+            freq=freq,
+            long_only=long_only,
+            min_weight=min_weight,
+            max_weight=max_weight,
+            target_leverage=target_leverage,
+        )
+        weights_series = rp_res["weights"]
+        details.update(rp_res.get("details", {}))
+        details["solver"] = "InverseVolatilityRiskParity"
+        details.setdefault("objective", "risk_parity")
+        canonical_model = "risk_parity"
+        objective = objective or details.get("objective")
+    elif model in ("equal", "equal_weight", "ew"):
+        weights_series = pd.Series(
+            np.full(len(returns.columns), target_leverage / max(len(returns.columns), 1)),
+            index=returns.columns,
+            dtype=float,
+        )
+        details["solver"] = "EqualWeight"
+        details.setdefault("objective", "equal_weight")
+        canonical_model = "equal_weight"
+        objective = objective or details.get("objective")
+    else:
+        raise ValueError(f"Unsupported optimisation model '{model}'.")
+
+    return weights_series, canonical_model, details, guardrails, objective
+
+
 def optimize_portfolio(prices: pd.DataFrame, policy: dict) -> dict:
     """Optimise asset weights given historical prices and a policy definition.
 
@@ -492,89 +577,80 @@ def optimize_portfolio(prices: pd.DataFrame, policy: dict) -> dict:
     min_weight, max_weight = _parse_weight_bounds(config, long_only=long_only)
     target_leverage = float(config.get("leverage", config.get("target_leverage", 1.0)) or 1.0)
 
+    fixed_weights, fixed_meta = load_fixed_positions(policy, returns.columns)
+    fixed_weights = fixed_weights.reindex(returns.columns).fillna(0.0)
+
+    sum_fixed = float(fixed_weights.sum())
+    if sum_fixed > target_leverage + 1e-8:
+        raise ValueError(
+            f"Sum of fixed position weights ({sum_fixed:.4f}) exceeds target leverage ({target_leverage:.4f})."
+        )
+
+    residual_budget = max(target_leverage - sum_fixed, 0.0)
+    fixed_tickers = set(fixed_weights.index[fixed_weights > 0])
+    free_columns = [col for col in returns.columns if col not in fixed_tickers]
+    free_returns = returns.loc[:, free_columns] if free_columns else returns.iloc[:, :0]
+
+    weights_free = pd.Series(0.0, index=free_columns, dtype=float)
     details: Dict[str, object] = {}
     guardrails: Dict[str, float] = {}
+    canonical_model = "fixed_only" if not free_columns else model
+    objective = config.get("objective")
 
-    if model in ("mean_variance", "mv", "sharpe", "sharpe_guardrail"):
-        optimiser_cfg = dict(config)
-        if min_weight is not None:
-            optimiser_cfg["min_weight"] = min_weight
-        if max_weight is not None:
-            optimiser_cfg["max_weight"] = max_weight
-        optimiser_cfg["leverage"] = target_leverage
-        optimiser_cfg["long_only"] = long_only
-        optimizer = SharpeGuardrailOptimizer(returns=returns, cfg=optimiser_cfg)
-        weights_arr = optimizer.optimize()
-        weights_series = pd.Series(weights_arr, index=returns.columns, dtype=float)
-        guardrails = optimizer.guardrails
-        details["solver"] = "SharpeGuardrailOptimizer"
-        details["objective"] = "max_sharpe"
-        canonical_model = "mean_variance"
-    elif model in ("black_litterman", "black-litterman", "bl"):
-        bl_res = _black_litterman_weights(
-            returns=returns,
+    if fixed_meta:
+        details["fixed_positions"] = {
+            "count": len(fixed_meta),
+            "weights": {ticker: float(fixed_weights.get(ticker, 0.0)) for ticker in fixed_meta},
+            "meta": fixed_meta,
+        }
+
+    if residual_budget > 1e-8 and free_columns:
+        weights_free, canonical_model, model_details, guardrails, objective = _optimise_free_slice(
+            returns=free_returns,
             config=config,
-            freq=freq,
+            model=model,
             long_only=long_only,
             min_weight=min_weight,
             max_weight=max_weight,
-            target_leverage=target_leverage,
-        )
-        weights_series = bl_res["weights"]
-        details.update(bl_res.get("details", {}))
-        details["solver"] = "BlackLittermanClosedForm"
-        details.setdefault("objective", "max_expected_utility")
-        canonical_model = "black_litterman"
-    elif model in ("risk_parity", "risk-parity", "rp", "hrp"):
-        rp_res = _risk_parity_weights(
-            returns=returns,
+            target_leverage=residual_budget,
             freq=freq,
-            long_only=long_only,
-            min_weight=min_weight,
-            max_weight=max_weight,
-            target_leverage=target_leverage,
+            risk_free_rate=risk_free_rate,
         )
-        weights_series = rp_res["weights"]
-        details.update(rp_res.get("details", {}))
-        details["solver"] = "InverseVolatilityRiskParity"
-        details.setdefault("objective", "risk_parity")
-        canonical_model = "risk_parity"
-    elif model in ("equal", "equal_weight", "ew"):
-        weights_series = pd.Series(
-            np.full(len(returns.columns), target_leverage / max(len(returns.columns), 1)),
-            index=returns.columns,
-            dtype=float,
-        )
-        details["solver"] = "EqualWeight"
-        details.setdefault("objective", "equal_weight")
-        canonical_model = "equal_weight"
+        details.update(model_details or {})
+        sum_free = float(weights_free.sum())
+        if sum_free > 0 and not np.isclose(sum_free, residual_budget):
+            weights_free *= residual_budget / sum_free
+    elif residual_budget > 1e-8 and not free_columns:
+        details.setdefault("solver", "FixedPositionsOnly")
+        details["note"] = "Residual budget with no free assets; fixed weights scaled proportionally."
+        if sum_fixed > 0:
+            scale = target_leverage / sum_fixed
+            fixed_weights = fixed_weights * scale
+            sum_fixed = float(fixed_weights.sum())
     else:
-        raise ValueError(f"Unsupported optimisation model '{model_raw}'.")
+        details.setdefault("solver", "FixedPositionsOnly")
 
-    weights_series = weights_series.reindex(returns.columns).fillna(0.0)
-    total_weight = float(weights_series.sum())
-    if np.isclose(total_weight, 0.0):
-        if len(weights_series) == 0:
-            raise ValueError("Optimiser returned no weights.")
-        weights_series[:] = target_leverage / len(weights_series)
-    else:
-        weights_series *= target_leverage / total_weight
+    combined_weights = pd.Series(0.0, index=returns.columns, dtype=float)
+    if not fixed_weights.empty:
+        combined_weights.loc[fixed_weights.index] = fixed_weights.values
+    if not weights_free.empty:
+        combined_weights.loc[weights_free.index] = combined_weights.loc[weights_free.index] + weights_free.values
 
-    pf_returns = _portfolio_returns(returns, weights_series)
+    pf_returns = _portfolio_returns(returns, combined_weights)
     if pf_returns.empty:
         raise ValueError("Optimised portfolio return series is empty.")
 
     summary = _summarize_portfolio(pf_returns, freq=freq, risk_free_rate=risk_free_rate)
-    objective = config.get("objective") or details.get("objective")
+    leverage_actual = float(combined_weights.sum())
 
     result = {
-        "weights": {ticker: float(w) for ticker, w in weights_series.items()},
+        "weights": {ticker: float(w) for ticker, w in combined_weights.items()},
         **summary,
         "model": canonical_model,
         "objective": objective,
         "details": details,
         "guardrails": guardrails,
-        "leverage": float(weights_series.sum()),
+        "leverage": leverage_actual,
         "frequency": freq,
         "risk_free_rate": risk_free_rate,
     }

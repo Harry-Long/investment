@@ -4,17 +4,17 @@ Tickers: ['JPM', 'JNJ', 'GOOGL', 'AVGO', 'PEP', 'AMZN', 'PG', 'XOM', 'CVX', 'NVD
 Weights: {'JPM': np.float64(0.05555555555555555), 'JNJ': np.float64(0.05555555555555555), 'GOOGL': np.float64(0.05555555555555555), 'AVGO': np.float64(0.05555555555555555), 'PEP': np.float64(0.05555555555555555), 'AMZN': np.float64(0.05555555555555555), 'PG': np.float64(0.05555555555555555), 'XOM': np.float64(0.05555555555555555), 'CVX': np.float64(0.05555555555555555), 'NVDA': np.float64(0.05555555555555555), 'ABBV': np.float64(0.05555555555555555), 'MRK': np.float64(0.05555555555555555), 'AAPL': np.float64(0.05555555555555555), 'MSFT': np.float64(0.05555555555555555), 'TSLA': np.float64(0.05555555555555555), 'UNH': np.float64(0.05555555555555555), 'META': np.float64(0.05555555555555555), 'V': np.float64(0.05555555555555555)}
 
 Performance and Risk
-Annualized Return: 0.2223
-Annualized Volatility: 0.1800
-Sharpe: 1.2057
+Annualized Return: 0.3755
+Annualized Volatility: 0.2624
+Sharpe: 1.3475
 Max Drawdown: -0.3309  Window: 2020-02-19 00:00:00 to 2020-03-23 00:00:00
 
 95% VaR: -0.0185   95% ES: -0.0313
 99% VaR: -0.0375   99% ES: -0.0530
 
 Relative to benchmark
-Annualized Excess Return: 0.0834
+Annualized Excess Return: 0.0814
 Tracking Error (ann.): 0.0552
-Information Ratio: 1.5110
+Information Ratio: 1.4742
 
 Disclaimer: For education only. Not investment advice.

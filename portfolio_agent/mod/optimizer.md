@@ -6,7 +6,7 @@ The `optimizer.py` module exposes a single public entry point, `optimize_portfol
 
 ### Inputs
 - `prices`: price history with a column per ticker and a datetime index.
-- `policy`: parsed `policy.yaml`. Configuration is read from `policy["portfolio"]["optimization"]` (falling back to `policy["portfolio"]` or the top-level dictionary for legacy support).
+- `policy`: parsed `policy.yaml`. Configuration is read from `policy["portfolio"]["optimization"]` (falling back to `policy["portfolio"]` or the top-level dictionary for legacy support). The optimiser inspects the config for any fixed/locked positions before solving.
 
 ### Output
 Dictionary containing:
@@ -19,7 +19,7 @@ Dictionary containing:
   "max_drawdown": float,
   "model": "mean_variance | black_litterman | risk_parity | equal_weight",
   "objective": "max_sharpe | max_expected_utility | risk_parity | equal_weight" | null,
-  "details": { ... },     // solver metadata, BL posterior stats, risk parity diagnostics
+  "details": { ... },     // solver metadata, BL posterior stats, risk parity diagnostics, fixed-position info
   "guardrails": { ... },  // populated only in mean-variance mode
   "leverage": float,
   "frequency": int,
@@ -41,6 +41,9 @@ The weights array always matches the column order of `prices`. Infeasible optimi
 - `portfolio.optimization.weight_bounds`, `long_only`, `leverage`: shared constraints across all models.
 - `portfolio.optimization.guardrails`: thresholds passed to the mean-variance optimiser.
 - `portfolio.optimization.black_litterman`: optional `market_caps`, `absolute_views`, `tau`, `risk_aversion`.
+- `portfolio.optimization.fixed_positions_file`: path to a CSV describing locked holdings (`ticker` column required; optional `weight`/`lock` columns).
+- `portfolio.optimization.fixed_positions`: inline alternative (list of tickers or dict entries with `ticker`/`weight`).
+- Locked tickers remain in the return matrix and consume the specified weight. When weights are omitted, the loader falls back to `portfolio.initial_weights` or a uniform slice and records the fallback in `details["fixed_positions"]["meta"]`.
 
 ### Guardrail optimiser (`SharpeGuardrailOptimizer`)
 The class remains available for more advanced use cases (e.g., walk-forward re-optimisation). It operates on a returns DataFrame and the same configuration dictionary. Calling `optimize()` returns the weight vector, while `summarize()` reports annualised return/volatility, Sharpe, and max drawdown for any candidate weights.

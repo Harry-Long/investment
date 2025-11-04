@@ -10,7 +10,8 @@
 ## Module Map
 - **`mod/policy.py` & `mod/universe.py`** – policy parsing plus universe resolution prioritising StockRover files, with legacy inline lists still supported.
 - **`mod/data_provider.py`** – price/metadata loader with Stooq and synthetic support; hooks remain for FMP/Yahoo if desired.
-- **`mod/optimizer.py`** – unified optimisation entry point exposing multiple models (mean-variance guardrail, Black-Litterman, risk parity, equal-weight baseline).
+- **`mod/optimizer.py`** – unified optimisation entry point exposing multiple models (mean-variance guardrail, Black-Litterman, risk parity, equal-weight baseline) and handling fixed positions.
+- **`mod/fixed_positions.py`** – helper for parsing locked/fixed holdings from CSV or inline policy configuration.
 - **`mod/selector.py`** – optional pre-optimisation asset selection (e.g. top by 1y return or Sharpe).
 - **`mod/perf_metrics.py`, `mod/risk_tools.py`** – shared performance and risk computations used across optimisation, reporting, and backtesting.
 - **`mod/reporting_extras.py`, `mod/qs_wrapper.py`** – QuantStats integration plus CSV/plot/text exports.
@@ -29,7 +30,7 @@ The refactored optimiser accepts a price DataFrame (`columns = tickers`) and the
   "max_drawdown": float,
   "model": "mean_variance | black_litterman | risk_parity | equal_weight",
   "objective": str | null,
-  "details": { ... },           # model-specific metadata (solver, BL views, risk parity stats)
+  "details": { ... },           # model-specific metadata (solver, BL views, risk parity stats, fixed positions)
   "guardrails": { ... },        # only populated for mean-variance guardrail mode
   "leverage": float,
   "frequency": int,
@@ -43,9 +44,20 @@ Supported models:
 - **`risk_parity`** – inverse-volatility heuristic with risk contribution diagnostics.
 - **`equal_weight`** – simple baseline for benchmarking downstream analytics.
 
+### Fixed (Locked) Positions
+- Supply a CSV via `portfolio.optimization.fixed_positions_file` with at least a `ticker` column. Optional columns:
+  - `weight` / `target_weight` / `allocation`: fraction of the portfolio to keep fixed.
+  - `lock` / `fixed`: boolean flag; defaults to locked when absent.
+  - Additional metadata columns are preserved in the optimiser output under `details.fixed_positions`.
+- Alternatively, define `portfolio.optimization.fixed_positions` inline (list of tickers or list/dict with `ticker`/`weight`).
+- When weights are omitted, the loader falls back to `portfolio.initial_weights` if available, otherwise assigns a uniform share (`1 / universe_size`) and notes the fallback in metadata.
+- Locked tickers stay inside the optimisation universe and their weights are frozen; the optimiser only solves for the residual allocation.
+
 ## Configuration Highlights (`policy.yaml`)
 - `data.stockrover_file`: required path to the universe exported from StockRover (CSV or TXT). Inline lists (`data.universe`) remain a fallback.
 - `portfolio.optimization.model`: choose the optimisation engine (`mean_variance`, `black_litterman`, `risk_parity`, `equal_weight`).
+- `portfolio.optimization.fixed_positions_file`: optional CSV path describing the holdings that should remain untouched.
+- `portfolio.optimization.fixed_positions`: optional inline list/dict mirroring the CSV structure.
 - `portfolio.optimization.guardrails`: thresholds used by the mean-variance solver.
 - `portfolio.optimization.black_litterman`: optional `market_caps`, `absolute_views`, `tau`, and `risk_aversion`.
 - `portfolio.optimization.weight_bounds`, `long_only`, `leverage`: portfolio constraints applied across models.

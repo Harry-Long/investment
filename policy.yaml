@@ -47,6 +47,8 @@ portfolio:
     long_only: true
     leverage: 1.0
     weight_bounds: [0.0, 0.35]
+    fixed_positions_file: /Users/harryzhang/Library/CloudStorage/Dropbox/investment/data/lock.csv     # optional: path to CSV with columns ticker,[weight],[lock]
+    fixed_positions: []            # optional inline definition, e.g. [{ticker: AAPL.US, weight: 0.05}]
     guardrails:
       max_volatility: 0.18
       min_return: 0.05
@@ -87,4 +89,5 @@ reporting:
 notes:
   - "Run with: python portfolio_agent/run.py [optional_config_path]."
   - "Update data.stockrover_file to point at the latest StockRover export."
+  - "Set portfolio.optimization.fixed_positions_file for locked holdings (CSV with ticker + optional weight/lock)."
   - "All analysis is for educational purposes only."
